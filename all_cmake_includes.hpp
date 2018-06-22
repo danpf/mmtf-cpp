@@ -1,0 +1,26 @@
+
+#include <msgpack.hpp>
+#include <mmtf/errors.hpp>
+#include <mmtf.hpp>
+#include <stdexcept>
+#include <mmtf/encoder.hpp>
+#include <mmtf/decoder.hpp>
+#include <cstring>
+#include <mmtf/object_encoders.hpp>
+#include <stdint.h>
+#include <mmtf/binary_encoder.hpp>
+#include <math.h>
+#include <fstream>
+#include <iomanip>
+#include <sstream>
+#include <mmtf/map_decoder.hpp>
+#include <string>
+#include <mmtf/msgpack_decoder.hpp>
+#include <limits>
+#include <algorithm>
+#include <mmtf/binary_decoder.hpp>
+#include <arpa/inet.h>
+#include <iostream>
+#include <vector>
+#include <map>
+#include <mmtf/structure_data.hpp>

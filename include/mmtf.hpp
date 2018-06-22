@@ -12,5 +12,6 @@
 
 // single include for all MMTF needs
 
-#include "mmtf/decoder.hpp"
-#include "mmtf/encoder.hpp"
+#include <mmtf/errors.hpp>
+#include <mmtf/decoder.hpp>
+#include <mmtf/encoder.hpp>

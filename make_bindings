@@ -1,0 +1,28 @@
+
+
+
+rm -rf binder && \
+ # Make bindings\
+$HOME/git/binder/build/llvm-4.0.0/build_4.0.0*/bin/binder \
+  --root-module mmtf \
+  --prefix $HOME/git/mmtf-cpp/binder/ \
+  --bind mmtf -trace \
+  all_includes.hpp \
+  -- -std=c++11 -I$HOME/git/mmtf-cpp/include \
+  -I$HOME/git/mmtf-cpp/msgpack-c/include \
+  -DMY_PROJECT_DEFINE -DNDEBUG  && \
+  \
+  \
+  \
+cd binder && \
+  \
+  $HOME/binder/build/llvm-4.0.0/build_4.0.0.linux.danpf-lappytappy.release/bin/clang++ \
+  -O3 \
+  -I$HOME/miniconda3/envs/py3/include/python3.6m -I$HOME/binder/build/pybind11/include -I/home/danpf/mmtf-cpp/include \
+  -I/home/danpf/git/binder/source -shared \
+  -std=c++11  mmtf.cpp \
+  -o mmtf.so -fPIC && \
+  python3 -c "import sys; sys.path.append('.'); import mmtf" && \
+  cd ../
+
+

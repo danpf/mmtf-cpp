@@ -14,11 +14,7 @@
 #include <math.h>
 
 // byteorder functions
-#ifdef WIN32
-#include <Winsock2.h>
-#else
 #include <arpa/inet.h>
-#endif
 
 namespace mmtf {
 

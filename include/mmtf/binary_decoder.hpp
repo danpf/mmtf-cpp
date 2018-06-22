@@ -13,10 +13,10 @@
 #ifndef MMTF_BINARY_DECODER_H
 #define MMTF_BINARY_DECODER_H
 
-#include "structure_data.hpp"
+#include <mmtf/structure_data.hpp>
 
 #include <msgpack.hpp>
-#include <cstring> // low level mem
+#include <cstring>
 #include <sstream>
 #include <limits>
 #include <algorithm>
@@ -112,11 +112,7 @@ private:
 namespace {
 
 // byteorder functions ("ntohl" etc.)
-#ifdef WIN32
-#include <Winsock2.h>
-#else
 #include <arpa/inet.h>
-#endif
 
 #ifndef __EMSCRIPTEN__
 void assignBigendian4(void* dst, const char* src) {
@@ -164,12 +160,12 @@ inline BinaryDecoder::BinaryDecoder(const msgpack::object& obj,
                                    : key_(key) {
     // sanity checks
     if (obj.type != msgpack::type::BIN) {
-        throw DecodeError("The '" + key + "' entry is not binary data");
+        throw mmtf::DecodeError("The '" + key + "' entry is not binary data");
     }
     if (obj.via.bin.size < 12) {
         std::stringstream err;
         err << "The '" + key + "' entry is too short " << obj.via.bin.size;
-        throw DecodeError(err.str());
+        throw mmtf::DecodeError(err.str());
     }
     // get data (encoded data is only pointed to and not parsed here)
     const char* bytes = obj.via.bin.ptr;
@@ -238,7 +234,7 @@ inline void BinaryDecoder::decode(std::vector<float>& output) {
         std::stringstream err;
         err << "Invalid strategy " << strategy_ << " for binary '" + key_
             << "': does not decode to float array";
-        throw DecodeError(err.str());
+        throw mmtf::DecodeError(err.str());
     }
     }
 
@@ -259,7 +255,7 @@ inline void BinaryDecoder::decode(std::vector<int8_t>& output) {
         std::stringstream err;
         err << "Invalid strategy " << strategy_ << " for binary '" + key_
             << "': does not decode to int8 array";
-        throw DecodeError(err.str());
+        throw mmtf::DecodeError(err.str());
     }
     }
 
@@ -280,7 +276,7 @@ inline void BinaryDecoder::decode(std::vector<int16_t>& output) {
         std::stringstream err;
         err << "Invalid strategy " << strategy_ << " for binary '" + key_
             << "': does not decode to int16 array";
-        throw DecodeError(err.str());
+        throw mmtf::DecodeError(err.str());
     }
     }
 
@@ -326,7 +322,7 @@ inline void BinaryDecoder::decode(std::vector<int32_t>& output) {
         std::stringstream err;
         err << "Invalid strategy " << strategy_ << " for binary '" + key_
             << "': does not decode to int32 array";
-        throw DecodeError(err.str());
+        throw mmtf::DecodeError(err.str());
     }
     }
 
@@ -347,7 +343,7 @@ inline void BinaryDecoder::decode(std::vector<std::string>& output) {
         std::stringstream err;
         err << "Invalid strategy " << strategy_ << " for binary '" + key_
             << "': does not decode to string array";
-        throw DecodeError(err.str());
+        throw mmtf::DecodeError(err.str());
     }
     }
 
@@ -370,7 +366,7 @@ inline void BinaryDecoder::decode(std::vector<char>& output) {
         std::stringstream err;
         err << "Invalid strategy " << strategy_ << " for binary '" + key_
             << "': does not decode to string array";
-        throw DecodeError(err.str());
+        throw mmtf::DecodeError(err.str());
     }
     }
 
@@ -384,7 +380,7 @@ inline void BinaryDecoder::checkLength_(int32_t exp_length) {
         std::stringstream err;
         err << "Length mismatch for binary '" + key_ + "': "
             << length_ << " vs " << exp_length;
-        throw DecodeError(err.str());
+        throw mmtf::DecodeError(err.str());
     }
 }
 
@@ -393,7 +389,7 @@ inline void BinaryDecoder::checkDivisibleBy_(int32_t item_size) {
         std::stringstream err;
         err << "Binary length of '" + key_ + "': "
             << encodedDataLength_ << " is not a multiple of " << item_size;
-        throw DecodeError(err.str());
+        throw mmtf::DecodeError(err.str());
     }
 }
 

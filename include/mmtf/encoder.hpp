@@ -12,11 +12,12 @@
 #ifndef MMTF_ENCODER_H
 #define MMTF_ENCODER_H
 
-#include "structure_data.hpp"
-#include "errors.hpp"
-#include "object_encoders.hpp"
-#include "binary_encoder.hpp"
+#include <mmtf/structure_data.hpp>
+#include <mmtf/errors.hpp>
+#include <mmtf/object_encoders.hpp>
+#include <mmtf/binary_encoder.hpp>
 #include <string>
+#include <fstream>
 
 namespace mmtf {
 
