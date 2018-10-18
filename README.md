@@ -43,7 +43,9 @@ For your more complicated projects, a `CMakeLists.txt` is included for you.
 
 ## Installation
 This is a header only project, there is no compilation necessary.  If you want to use it in your project you can
-download this repo and add `-I/full/path/to/mmtf-cpp/include` to your `g++` or `clang++` command.
+download this repo and add `-I/full/path/to/mmtf-cpp/include` to your `g++` or `clang++` command.  
+*REMINDER* This project depends on [msgpack-c](https://github.com/msgpack/msgpack-c), you must also install that to your system
+or add the `msgpack-c` include directory to your g++ command as well.  
 
 You can also perform a system wide installation with `cmake` and `ninja` (or `make`).  This is generally how you would
 install something for a `Docker` image.
