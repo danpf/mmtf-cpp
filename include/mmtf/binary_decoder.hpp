@@ -45,7 +45,7 @@ public:
      *
      * @tparam T Can be one of:
      *           - std::vector<float>       (strategies: 1, 9, 10, 11, 12, 13)
-     *           - std::vector<int8_t>      (strategies: 2)
+     *           - std::vector<int8_t>      (strategies: 2, 16)
      *           - std::vector<int16_t>     (strategies: 3)
      *           - std::vector<int32_t>     (strategies: 4, 7, 8, 14, 15)
      *           - std::vector<std::string> (strategies: 5)
