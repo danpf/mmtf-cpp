@@ -139,6 +139,12 @@ inline std::vector<char> encodeRunLengthFloat(std::vector<float> floats_in, int3
  */
 inline std::vector<char> encodeDeltaRecursiveFloat(std::vector<float> floats_in, int32_t multiplier);
 
+/** encode Run-Length 8bit int encoding (type 16)
+ * @param[in] floats_in     vector of ints
+ * @return cv               char vector of encoded bytes
+ */
+inline std::vector<char> encodeRunLengthInt8(std::vector<int8_t> int8_vec);
+
 // *************************************************************************
 // IMPLEMENTATION
 // *************************************************************************
@@ -314,7 +320,6 @@ inline std::vector<char> encodeRunLengthFloat(std::vector<float> floats_in, int3
   return stringstreamToCharVector(ss);
 }
 
-  
 
 inline std::vector<char> encodeDeltaRecursiveFloat(std::vector<float> floats_in, int32_t multiplier) {
   std::stringstream ss;
@@ -326,6 +331,18 @@ inline std::vector<char> encodeDeltaRecursiveFloat(std::vector<float> floats_in,
     int16_t temp = htons(int_vec[i]);
     ss.write(reinterpret_cast< char * >(&temp), sizeof(temp));
   }
+  return stringstreamToCharVector(ss);
+}
+
+
+inline std::vector<char> encodeRunLengthInt8(std::vector<int8_t> int8_vec) {
+  std::stringstream ss;
+  add_header(ss, int8_vec.size(), 16, 0);
+  std::vector<int32_t> int_vec = runLengthEncode(int8_vec);
+  for (size_t i=0; i<int_vec.size(); ++i) {
+    int32_t temp = htonl(int_vec[i]);
+    ss.write(reinterpret_cast< char * >(&temp), sizeof(temp));
+  } 
   return stringstreamToCharVector(ss);
 }
 

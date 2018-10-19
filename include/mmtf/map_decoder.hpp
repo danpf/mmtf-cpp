@@ -183,7 +183,6 @@ inline void MapDecoder::checkType_(const std::string& key,
 inline void MapDecoder::checkType_(const std::string& key,
                                    msgpack::type::object_type type,
                                    const msgpack::object& target) {
-		std::cout << "TYPE:!  " << type << std::endl;
     if (type != msgpack::type::STR) {
         std::cerr << "Warning: Non-string type " << type << " found for "
                      "entry " << key << std::endl;

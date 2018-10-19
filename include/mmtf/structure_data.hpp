@@ -280,7 +280,6 @@ struct StructureData {
     std::vector<std::string>         chainNameList;
     std::vector<int32_t>             groupsPerChain;
     std::vector<int32_t>             chainsPerModel;
-    msgpack::object                  extraData;
 
     /**
      * @brief Construct object with default values set.

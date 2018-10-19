@@ -138,6 +138,11 @@ encodeToMap(const StructureData& data, msgpack::zone& m_zone,
     data_map["bondOrderList"] =
       msgpack::object(mmtf::encodeInt8ToByte(data.bondOrderList), m_zone);
   }
+  // std::vector<int8_t>
+  if (!mmtf::isDefaultValue(data.bondResonanceList)) {
+    data_map["bondResonanceList"] =
+      msgpack::object(mmtf::encodeInt8ToByte(data.bondResonanceList), m_zone);
+  }
   if (!mmtf::isDefaultValue(data.secStructList)) {
     data_map["secStructList"] =
       msgpack::object(mmtf::encodeInt8ToByte(data.secStructList), m_zone);
@@ -198,10 +203,6 @@ encodeToMap(const StructureData& data, msgpack::zone& m_zone,
   // std::vector<std::vector<float>>
   if (!mmtf::isDefaultValue(data.ncsOperatorList)) {
     data_map["ncsOperatorList"] = msgpack::object(data.ncsOperatorList, m_zone);
-  }
-  // msgpack::object
-  if (!mmtf::isDefaultValue(data.extraData)) {
-    data_map["extraData"] = msgpack::object(data.extraData, m_zone);
   }
   return data_map;
 }

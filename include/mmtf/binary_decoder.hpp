@@ -255,6 +255,10 @@ inline void BinaryDecoder::decode(std::vector<int8_t>& output) {
         decodeFromBytes_(output);
         break;
     }
+    case 16: {
+        runLengthDecode_(output);
+        break;
+    }
     default: {
         std::stringstream err;
         err << "Invalid strategy " << strategy_ << " for binary '" + key_
