@@ -28,7 +28,7 @@ namespace mmtf {
  * @brief MMTF spec version which this library implements
  */
 #define MMTF_SPEC_VERSION_MAJOR 1
-#define MMTF_SPEC_VERSION_MINOR 0
+#define MMTF_SPEC_VERSION_MINOR 1
 
 /**
  * @brief Get string representation of MMTF spec version implemented here
