@@ -56,6 +56,13 @@ inline std::vector<int32_t> deltaEncode(std::vector<int32_t> const & vec_in);
 inline std::vector<int32_t> runLengthEncode(std::vector<int32_t> const & vec_in );
 
 /**
+ * @brief mmtf run length encode a vector of ints.
+ * @param[in] vec_in        vector of ints
+ * @return vec_out          run length encoded int vector
+ */
+inline std::vector<int32_t> runLengthEncode(std::vector<int8_t> const & vec_in );
+
+/**
  * @brief mmtf recursive index encode a vector of ints.
  * @param[in] vec_in        vector of ints
  * @param[in] max           maximum value of signed 16bit int
@@ -142,6 +149,12 @@ inline std::vector<char> encodeRunLengthFloat(std::vector<float> floats_in, int3
  */
 inline std::vector<char> encodeDeltaRecursiveFloat(std::vector<float> floats_in, int32_t multiplier);
 
+/** encode Run-Length 8bit int encoding (type 16)
+ * @param[in] floats_in     vector of ints
+ * @return cv               char vector of encoded bytes
+ */
+inline std::vector<char> encodeRunLengthInt8(std::vector<int8_t> int8_vec);
+
 // *************************************************************************
 // IMPLEMENTATION
 // *************************************************************************
@@ -175,12 +188,33 @@ inline std::vector<int32_t> runLengthEncode(std::vector<int32_t> const & vec_in 
   int32_t curr = vec_in[0];
   ret.push_back(curr);
   int32_t counter = 1;
-  for (int32_t i = 1; i < (int)vec_in.size(); ++i) {
+  for (std::size_t i = 1; i < vec_in.size(); ++i) {
     if ( vec_in[i] == curr ) {
       ++counter;
     } else {
       ret.push_back(counter);
       ret.push_back(vec_in[i]);
+      curr = vec_in[i];
+      counter = 1;
+    }
+  }
+  ret.push_back(counter);
+  return ret;
+}
+
+
+inline std::vector<int32_t> runLengthEncode(std::vector<int8_t> const & vec_in ) {
+  std::vector<int32_t> ret;
+  if (vec_in.size()==0) return ret;
+  int32_t curr = vec_in[0];
+  ret.push_back(curr);
+  int32_t counter = 1;
+  for (std::size_t i = 1; i < vec_in.size(); ++i) {
+    if ( (int32_t)vec_in[i] == curr ) {
+      ++counter;
+    } else {
+      ret.push_back(counter);
+      ret.push_back((int32_t)vec_in[i]);
       curr = vec_in[i];
       counter = 1;
     }
@@ -318,7 +352,6 @@ inline std::vector<char> encodeRunLengthFloat(std::vector<float> floats_in, int3
 }
 
 
-
 inline std::vector<char> encodeDeltaRecursiveFloat(std::vector<float> floats_in, int32_t multiplier) {
   std::stringstream ss;
   add_header(ss, floats_in.size(), 10, multiplier);
@@ -327,6 +360,18 @@ inline std::vector<char> encodeDeltaRecursiveFloat(std::vector<float> floats_in,
   int_vec = recursiveIndexEncode(int_vec);
   for (size_t i=0; i<int_vec.size(); ++i) {
     int16_t temp = htons(int_vec[i]);
+    ss.write(reinterpret_cast< char * >(&temp), sizeof(temp));
+  }
+  return stringstreamToCharVector(ss);
+}
+
+
+inline std::vector<char> encodeRunLengthInt8(std::vector<int8_t> int8_vec) {
+  std::stringstream ss;
+  add_header(ss, int8_vec.size(), 16, 0);
+  std::vector<int32_t> int_vec = runLengthEncode(int8_vec);
+  for (size_t i=0; i<int_vec.size(); ++i) {
+    int32_t temp = htonl(int_vec[i]);
     ss.write(reinterpret_cast< char * >(&temp), sizeof(temp));
   }
   return stringstreamToCharVector(ss);

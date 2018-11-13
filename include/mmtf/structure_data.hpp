@@ -2,7 +2,7 @@
 //
 // Licensed under the MIT License (see accompanying LICENSE file).
 //
-// The authors of this code are: Gabriel Studer, Gerardo Tauriello,
+// The authors of this code are: Gabriel Studer, Gerardo Tauriellom and
 // Daniel Farrell.
 // 
 // Based on mmtf_c developed by Julien Ferte (http://www.julienferte.com/),
@@ -16,6 +16,7 @@
 
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <stdint.h>
 #include <sstream>
 #include <limits>
@@ -29,7 +30,7 @@ namespace mmtf {
  * @brief MMTF spec version which this library implements
  */
 #define MMTF_SPEC_VERSION_MAJOR 1
-#define MMTF_SPEC_VERSION_MINOR 0
+#define MMTF_SPEC_VERSION_MINOR 1
 
 /**
  * @brief Get string representation of MMTF spec version implemented here
@@ -53,6 +54,7 @@ struct GroupType { // NOTE: can't use MSGPACK_DEFINE_MAP due to char
     std::vector<std::string>  elementList;
     std::vector<int32_t>      bondAtomList;
     std::vector<int8_t>       bondOrderList;
+    std::vector<int8_t>       bondResonanceList;
     std::string               groupName;
     char                      singleLetterCode;
     std::string               chemCompType;
@@ -64,6 +66,7 @@ struct GroupType { // NOTE: can't use MSGPACK_DEFINE_MAP due to char
         elementList == c.elementList &&
         bondAtomList == c.bondAtomList &&
         bondOrderList == c.bondOrderList &&
+        bondResonanceList == c.bondResonanceList &&
         groupName == c.groupName &&
         singleLetterCode == c.singleLetterCode &&
         chemCompType == c.chemCompType);
@@ -173,6 +176,7 @@ struct StructureData {
     std::vector<GroupType>                   groupList;
     std::vector<int32_t>                     bondAtomList;
     std::vector<int8_t>                      bondOrderList;
+    std::vector<int8_t>                      bondResonanceList;
     std::vector<float>                       xCoordList;
     std::vector<float>                       yCoordList;
     std::vector<float>                       zCoordList;
@@ -250,6 +254,7 @@ struct StructureData {
         groupList == c.groupList &&
         bondAtomList == c.bondAtomList &&
         bondOrderList == c.bondOrderList &&
+        bondResonanceList == c.bondResonanceList &&
         xCoordList == c.xCoordList &&
         yCoordList == c.yCoordList &&
         zCoordList == c.zCoordList &&
@@ -289,6 +294,7 @@ template <>
 inline bool isDefaultValue(const std::string& value);
 template <>
 inline bool isDefaultValue(const std::map<std::string, msgpack::object>& value);
+inline bool isDefaultValue(const msgpack::object& value);
 
 
 /**
@@ -395,6 +401,9 @@ template <>
 inline bool isDefaultValue(const std::map<std::string, msgpack::object>& value) {
   return value.empty();
 }
+inline bool isDefaultValue(const msgpack::object& value) {
+  return value.is_nil();
+}
 
 template <typename T>
 inline void setDefaultValue(T& value) {
@@ -470,6 +479,13 @@ inline StructureData::StructureData() {
 }
 
 inline bool StructureData::hasConsistentData(bool verbose, uint32_t chain_name_max_length) const {
+  std::vector<int8_t> allowed_bond_orders;
+  allowed_bond_orders.push_back(-1);
+  allowed_bond_orders.push_back(1);
+  allowed_bond_orders.push_back(2);
+  allowed_bond_orders.push_back(3);
+  allowed_bond_orders.push_back(4);
+
   // check unitCell: if given, must be of length 6
   if (!hasRightSizeOptional(unitCell, 6)) {
     if (verbose) {
@@ -552,6 +568,61 @@ inline bool StructureData::hasConsistentData(bool verbose, uint32_t chain_name_m
         }
         return false;
       }
+      for (size_t j = 0; j < g.bondOrderList.size(); ++j) {
+        if (std::find(allowed_bond_orders.begin(), allowed_bond_orders.end(),
+              g.bondOrderList[j]) == allowed_bond_orders.end()) {
+          if (verbose) {
+            std::cout << "Cannot have bond order of: " << g.bondOrderList[j]
+                << " allowed bond orders are: -1, 1, 2, 3 or 4.  at idx: " << j << std::endl;
+          }
+          return false;
+        }
+      }
+    }
+    if (!isDefaultValue(g.bondResonanceList)) {
+      if (isDefaultValue(g.bondOrderList) || isDefaultValue(g.bondAtomList)) {
+        if (verbose) {
+          std::cout << "Cannot have bondResonanceList without both " <<
+              "bondOrderList and bondAtomList! at idx: " << i << std::endl;
+        }
+        return false;
+      }
+      if (g.bondOrderList.size() != g.bondResonanceList.size()) {
+        if (verbose) {
+          std::cout << "inconsistent group::bondOrderSize size: " <<
+              g.bondOrderList.size() << " != group::bondResonanceList size(*2): " <<
+              g.bondResonanceList.size()*2 << " at idx: " << i << std::endl;
+        }
+        return false;
+      }
+      if (g.bondAtomList.size() != g.bondResonanceList.size() * 2) {
+        if (verbose) {
+          std::cout << "inconsistent group::bondAtomList size: " <<
+              g.bondAtomList.size() << " != group::bondResonanceList size(*2): " <<
+              g.bondResonanceList.size()*2 << " at idx: " << i << std::endl;
+        }
+        return false;
+      }
+      // Check bond resonance matches
+      for (size_t j = 0; j < g.bondResonanceList.size(); ++j) {
+        if (g.bondResonanceList[j] < -1 || g.bondResonanceList[j] > 1) {
+          if (verbose) {
+            std::cout << "group::bondResonanceList had a Resonance of: "
+              << g.bondResonanceList[j] << " and only -1, 0, or 1 are allowed"
+              << std::endl;
+          }
+          return false;
+        }
+        if (g.bondOrderList[j] == -1 && g.bondResonanceList[j] != 1) {
+          if (verbose) {
+            std::cout << "group::bondResonanceList had a Resonance of: "
+              << g.bondResonanceList[j] << " and group::bondOrderList had an order of "
+              << g.bondOrderList[j] << " we require unknown bondOrders to have resonance"
+              << std::endl;
+          }
+          return false;
+        }
+      }
     }
     if (!hasValidIndices(g.bondAtomList, num_atoms)) {
       if (verbose) {
@@ -570,6 +641,45 @@ inline bool StructureData::hasConsistentData(bool verbose, uint32_t chain_name_m
               bondOrderList.size()*2 << std::endl;
       }
       return false;
+    }
+    for (size_t i = 0; i < bondOrderList.size(); ++i) {
+      if (std::find(allowed_bond_orders.begin(), allowed_bond_orders.end(),
+            bondOrderList[i]) == allowed_bond_orders.end()) {
+        if (verbose) {
+          std::cout << "Cannot have bond order of: " << bondOrderList[i]
+              << " allowed bond orders are: -1, 1, 2, 3 or 4.  at idx: " << i << std::endl;
+        }
+        return false;
+      }
+    }
+  }
+  if (!isDefaultValue(bondResonanceList)) {
+    if (bondAtomList.size() != bondResonanceList.size() * 2) {
+      if (verbose) {
+          std::cout << "inconsistent bondAtomList size: " <<
+              bondAtomList.size() << " != bondResonanceList size(*2): " <<
+              bondResonanceList.size()*2 << std::endl;
+      }
+      return false;
+    }
+    for (size_t i = 0; i < bondResonanceList.size(); ++i) {
+      if (bondResonanceList[i] < -1 || bondResonanceList[i] > 1) {
+        if (verbose) {
+          std::cout << "group::bondResonanceList had a Resonance of: "
+            << bondResonanceList[i] << " and only -1, 0, or 1 are allowed"
+            << std::endl;
+        }
+        return false;
+      }
+      if (bondOrderList[i] == -1 && bondResonanceList[i] != 1) {
+        if (verbose) {
+          std::cout << "group::bondResonanceList had a Resonance of: "
+            << bondResonanceList[i] << " and group::bondOrderList had an order of "
+            << bondOrderList[i] << " we require unknown bondOrders to have resonance"
+            << std::endl;
+        }
+        return false;
+      }
     }
   }
   if (!hasValidIndices(bondAtomList, numAtoms)) {
@@ -695,11 +805,17 @@ inline bool StructureData::hasConsistentData(bool verbose, uint32_t chain_name_m
   // traverse structure for more checks
   int bond_count_from_atom = 0;
   int bond_count_from_order = 0;
+  int bond_count_from_resonance = 0;
   bool all_bond_orderLists_are_default = true;
+  bool all_bond_resonanceLists_are_default = true;
   bool all_bond_atomLists_are_default = true;
   if (!isDefaultValue(bondOrderList)) {
     all_bond_orderLists_are_default = false;
     bond_count_from_order = bondOrderList.size();
+  }
+  if (!isDefaultValue(bondResonanceList)) {
+    all_bond_resonanceLists_are_default = false;
+    bond_count_from_resonance = bondOrderList.size();
   }
   if (!isDefaultValue(bondAtomList)) {
     all_bond_atomLists_are_default = false;
@@ -752,6 +868,10 @@ inline bool StructureData::hasConsistentData(bool verbose, uint32_t chain_name_m
           all_bond_orderLists_are_default = false;
           bond_count_from_order += group.bondOrderList.size();
         }
+        if (!isDefaultValue(group.bondResonanceList)) {
+          all_bond_resonanceLists_are_default = false;
+          bond_count_from_resonance += group.bondResonanceList.size();
+        }
         if (!isDefaultValue(group.bondAtomList)) {
           all_bond_atomLists_are_default = false;
           bond_count_from_atom += group.bondAtomList.size()/2;
@@ -765,6 +885,14 @@ inline bool StructureData::hasConsistentData(bool verbose, uint32_t chain_name_m
     if (bond_count_from_order != numBonds) {
       if (verbose) {
         std::cout << "inconsistent numBonds vs bond order count" << std::endl;
+      }
+      return false;
+    }
+  }
+  if (!all_bond_resonanceLists_are_default) {
+    if (bond_count_from_resonance != numBonds) {
+      if (verbose) {
+        std::cout << "inconsistent numBonds vs bond resonance count" << std::endl;
       }
       return false;
     }
@@ -806,11 +934,11 @@ inline std::string StructureData::print(std::string delim) {
   int groupIndex = 0;
   int atomIndex = 0;
 
-  //# traverse models
+  // traverse models
   for (int i = 0; i < numModels; i++, modelIndex++) {
-    //    # traverse chains
+    // traverse chains
     for (int j = 0; j < chainsPerModel[modelIndex]; j++, chainIndex++) {
-      //        # traverse groups
+      // traverse groups
       for (int k = 0; k < groupsPerChain[chainIndex]; k++, groupIndex++) {
         const mmtf::GroupType& group =
             groupList[groupTypeList[groupIndex]];
